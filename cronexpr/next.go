@@ -71,7 +71,11 @@ func (e *Expr) NextNWithContext(ctx context.Context, from time.Time, n int) ([]t
 	out := make([]time.Time, 0, n)
 	cur := from
 	for len(out) < n {
-		nxt, err := e.NextWithContext(context.Background(), cur)
+		// Honor caller cancellation: a gateway/timeout cancel must propagate
+		// into ConvertIn (tz layer) and NextAfter (evaluator loop). Passing
+		// context.Background() here would let a long batch keep scanning
+		// maxScan iterations after the request is already dead.
+		nxt, err := e.NextWithContext(ctx, cur)
 		if err != nil {
 			return nil, err
 		}

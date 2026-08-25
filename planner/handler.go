@@ -66,7 +66,9 @@ func (a *API) handleNext(w http.ResponseWriter, r *http.Request) {
 	if n <= 0 {
 		n = 5
 	}
-	times, err := e.NextN(from, n)
+	// Bind the request context so a gateway timeout or client disconnect
+	// cancels the batch instead of letting NextNWithContext scan to completion.
+	times, err := e.NextNWithContext(r.Context(), from, n)
 	if err != nil {
 		writeJSON(w, map[string]any{"error": err.Error()})
 		return
